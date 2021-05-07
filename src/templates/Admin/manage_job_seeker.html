@@ -1,0 +1,26 @@
+{% extends 'Admin/index-admin.html' %}
+{% block body %}
+<body>
+<form id="form2" name="form2" method="post" action="">
+<table width="200" border="1">
+  <tr>
+    <th scope="col">Username</th>
+    <th scope="col">Address</th>
+    <th scope="col">Phone no </th>
+    <th scope="col">Email</th>
+    <th scope="col">&nbsp;</th>
+    </tr>
+  {% for i in val %}
+  <tr>
+    <td>{{i[1]}} {{i[2]}}</td>
+    <td>{{i[3]}} {{i[4]}} pin:{{i[5]}}</td>
+    <td>{{i[6]}}</td>
+    <td>{{i[7]}}</td>
+    <td><p><a href="{{url_for('block_jobseeker',id=i[8])}}">Block</a></p>
+      <p><a href="{{url_for('unblock_jobseeker',id=i[8])}}">Unblock</a></p></td>
+  </tr>
+    {% endfor %}
+</table>
+</form>
+</body>
+{% endblock %}

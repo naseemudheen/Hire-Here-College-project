@@ -1,0 +1,32 @@
+{% extends 'Employer/index-employer.html' %}
+{% block body %}
+<body>
+
+<form id="form1" name="form1" method="post" action="/add_job">
+<table width="263" border="0">
+  <tr>
+    <td>Job</td>
+    <td><input type="text" name="textfield"  required pattern="[A-Z a-z]{2,25}" /></td>
+  </tr>
+  <tr>
+    <td>Salary</td>
+    <td><input type="text" name="textfield3" required pattern="[0-9]" /></td>
+  </tr>
+  <tr>
+    <td>Place</td>
+    <td><input type="text" name="textfield4" required pattern="[A-Z a-z]{2,25}" /></td>
+  </tr>
+  <tr>
+    <td>Contact No </td>
+    <td><input type="text" name="textfield5" required pattern="[6789][0-9]{9}"/></td>
+  </tr>
+  <tr>
+    <td colspan="2"><div align="center">
+      <input type="submit" name="Submit" value="Add" />
+    </div></td>
+  </tr>
+</table>
+
+</form>
+</body>
+{% endblock %}

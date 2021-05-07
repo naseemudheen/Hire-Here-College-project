@@ -1,0 +1,32 @@
+{% extends 'index.html' %}
+{% block body %}
+
+<body>
+<form id="form1" name="form1" method="post" action="/login">
+  <div align="center">
+    <table width="269" border="0">
+      <tr>
+        <td></td>
+        <td><p><output name="msg"></output></p></td>
+      </tr>
+      <tr>
+        <td width="94">Username</td>
+        <td width="159"><label>
+          <input type="text" name="textfield" />
+        </label></td>
+      </tr>
+      <tr>
+        <td>Password</td>
+        <td><input type="password" name="textfield2" /></td>
+      </tr>
+      <tr>
+        <td><div align="center">
+          <input type="submit" name="login" value="Login" />
+        </div>          <div align="center"></div></td>
+        <td><div align="center"><a href="{{url_for('employer_register')}}">Register</a></div></td>
+      </tr>
+      </table>
+  </div>
+</form>
+</body>
+{% endblock %}
