@@ -3,11 +3,12 @@ from flask import *
 from datetime import date
 
 app = Flask(__name__)
+
 con = pymysql.connect(host='localhost', user='root', passwd='', port=3306, db='part_time_job')
 cmd = con.cursor()
 app.secret_key = "qwer";
 
-#new coomemt
+
 @app.route('/', methods=['get'])
 def main():
     return render_template('login.html')
