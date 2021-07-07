@@ -27,7 +27,12 @@ def login():
             return '''<script>window.location='/admin_home' </script>'''
         elif res[3] == 'employer':
             session['lid'] = res[0]
+            session['name']= res[1]
             return '''<script>window.location='/employer_home' </script>'''
+        elif res[3] == 'jobseeker':
+            session['lid'] = res[0]
+            session['name']= res[1]
+            return '''<script>window.location='/jobseeker_home' </script>'''
         else:
             return "<script> alert('invalid username or password')</script>"
 
@@ -153,7 +158,7 @@ def update_complaint_admin():
     con.commit()
     return '''<script>alert('Replied');window.location='/complaint_admin'</script>'''
 
-
+#--------------------Employer modules------------------------------
 @app.route('/employer_register')
 def employer_register():
     return render_template('employer_register.html')
@@ -268,120 +273,211 @@ def feedback_employer():
         "SELECT `login`.`username`,`feedback`.* FROM `feedback` JOIN `login` ON `login`.`id`=`feedback`.`login_id` WHERE `login`.`type`='jobseeker'")
     s = cmd.fetchall()
     return render_template('Employer/view_feedback.html', val=s)
-
-#Android webservice
-
-@app.route('/log_in', methods=['post', 'get'])
-def log_in():
-    username = request.form["username"]
-    password = request.form["password"]
+#----------------------------------Job seeker module------------------------------------------------------------------------
 
 
-    cmd.execute("SELECT `login`.*,`jobseeker`.`firstname`,`jobseeker`.`lastname` FROM  `login` JOIN `jobseeker` ON `login`.`id`=`jobseeker`.`login_id` WHERE `username`='"+username+"' AND `password`='"+password+"'")
-    res = cmd.fetchone()
-    if res == None:
-        result = {'status':'failure'}
-        return jsonify(result)
-    else:
-        if res[3] == 'jobseeker':
-            result = {'status': 'success','username':res[2],'uid':res[0],'fullname':res[4]+'  '+res[5]}
-            return jsonify(result)
-        else:
-            result = {'status': 'failure'}
-            return jsonify(result)
+@app.route('/jobseeker_home')
+def jobseeker_home():
+    return render_template('Jobseeker/jshome.html',name=session['name'])
 
-@app.route('/register', methods=['post', 'get'])
-def register():
-    firstname = request.get_json()["firstname"]
-    lastname = request.get_json()["lastname"]
-    username = request.get_json()["username"]
-    password = request.get_json()["password"]
-    email = request.get_json()["email"]
-    place = request.get_json()["place"]
-    post = request.get_json()["post"]
-    pin = request.get_json()["pin"]
-    phone = request.get_json()["phone"]
-    select_qry = "SELECT * from login where username = '"+username+"'"
-    cmd.execute(select_qry)
-
-    records = cmd.fetchall()
-    if len(records) != 0:
-        return "username"
-
-    try:
-        cmd.execute("INSERT INTO login(username,password,type) values ('"+username+"','"+password+"','jobseeker');")
-        id = con.insert_id()
-        insert_qry2 = "INSERT INTO jobseeker (firstname, lastname, place, post,pin,email,phoneno,login_id) VALUES ('" + firstname + "','" + lastname + "','" + place + "','" + post + "','" + str(pin) + "','" + email + "','" + str(phone) + "','"+str(id)+"')"
-        cmd.execute(insert_qry2)
-        con.commit()
-        return "success"
-    except Exception as e:
-        return "failure"
-
-
-@app.route('/viewjob', methods=['post', 'get'])
-def viewjob():
+@app.route('/viewjob_jobseeker')
+def viewjob_jobseeker():
     cmd.execute("SELECT `job`.*,`employer`.`company` FROM `job` JOIN `employer` ON `job`.`company_id`=`employer`.`id`")
     res = cmd.fetchall()
-    jobs = []
+    return render_template('Jobseeker/view_job.html',val=res)
 
-    for result in res:
-        contents  ={'id':result[0],'job':result[1],'salary':result[3],'place':result[4],'contact':result[5],'company':result[6]}
-        jobs.append(contents)
-    return jsonify(jobs)
+@app.route('/apply_job', methods=['get', 'post'])
+def apply_job():
+    jid = request.args.get('id')
 
-@app.route('/jobApply', methods=['post', 'get'])
-def jobApply():
-    uid=request.form['user_id']
-    job_id=request.form['job_id']
-    try:
-        cmd.execute("SELECT * FROM `job-applied` WHERE `login_id`='"+uid+"' AND `job_id` ='"+job_id+"'")
-        res = cmd.fetchone()
-        if res is None:
-            cmd.execute("INSERT INTO `job-applied` (`login_id`,`job_id`) VALUES ('"+uid+"','"+job_id+"')")
-            con.commit()
-            return "success"
-        else:
-            return "failure"
-    except Exception as e:
-        return "failure"
+    cmd.execute("SELECT * FROM `job-applied` WHERE `login_id`='" + str(session['lid']) + " ' AND `job_id` ='"+str(jid)+"'")
+    res = cmd.fetchone()
+    if res is None:
+        cmd.execute("INSERT INTO `job-applied` (`login_id`,`job_id`) VALUES ('"+str(session['lid'])+"','"+str(jid)+"')")
+        con.commit()
+        return '''<script>alert('Job Applied');window.location='/viewjob_jobseeker'</script>'''
+
+    else:
+        return '''<script>alert('Job Already Applied');window.location='/viewjob_jobseeker'</script>'''
 
 
-@app.route('/viewAppliedjob', methods=['post', 'get'])
-def viewAppliedjob():
-    uid=request.form['login_id']
-    cmd.execute("SELECT `job`.`job`,`employer`.`company` FROM `job` JOIN `employer` ON `job`.`company_id`=`employer`.`id` WHERE `job`.`id` IN(SELECT `job_id` FROM `job-applied` WHERE `login_id`='"+uid+"')")
+@app.route('/complaint_jobseeker')
+def complaint_jobseeker():
+    return render_template('Jobseeker/complaint.html')
+
+@app.route('/feedback_jobseeker')
+def feedback_jobseeker():
+    return render_template('Jobseeker/feedback.html')
+
+@app.route('/sendcomplaint_jobseeker',methods=['get', 'post'])
+def sendcomplaint_jobseeker():
+    msg = request.form['textfield']
+    today = date.today()
+    cmd.execute("INSERT INTO `complaint`(`complaint`,`date`,`login_id`)VALUES('"+msg+"','"+str(today)+"','"+str(session['lid'])+"')")
+    con.commit()
+    return '''<script>alert('Complaint Send');window.location='/complaint_jobseeker'</script>'''
+
+
+@app.route('/sendfeedback_jobseeker',methods=['get', 'post'])
+def sendfeedback_jobseeker():
+    msg = request.form['textfield']
+    today = date.today()
+    cmd.execute("INSERT INTO `feedback`(`feedback`,`date`,`login_id`)VALUES('"+msg+"','"+str(today)+"','"+str(session['lid'])+"')")
+    con.commit()
+    return '''<script>alert('Feedback Send');window.location='/feedback_jobseeker'</script>'''
+
+@app.route('/jobseeker_register')
+def jobseeker_register():
+    return render_template('jobseeker_register.html')
+
+@app.route('/add_jobseeker', methods=['post'])
+def add_jobseeker():
+    fname = request.form['textfield']
+    lname = request.form['textfield2']
+    usr = request.form['textfield8']
+    pwd = request.form['textfield9']
+    place = request.form['textfield3']
+    post = request.form['textfield4']
+    pin = request.form['textfield5']
+    phone = request.form['textfield6']
+    email = request.form['textfield7']
+
+    cmd.execute("INSERT INTO login (username,password,type) values ('" + usr + "','" + pwd + "','jobseeker')")
+    id = con.insert_id()
+    insert_qry2 = "INSERT INTO jobseeker (firstname, lastname, place, post,pin,email,phoneno,login_id) VALUES ('" + fname + "','" + lname + "','" + place + "','" + post + "','" + str(
+        pin) + "','" + email + "','" + str(phone) + "','" + str(id) + "')"
+    cmd.execute(insert_qry2)
+    con.commit()
+    return '''<script>alert('Registered successfully');window.location='/'</script>'''
+
+@app.route('/viewapplied_job')
+def viewapplied_job():
+    cmd.execute("SELECT `job`.`job`,`employer`.`company` FROM `job` JOIN `employer` ON `job`.`company_id`=`employer`.`id` WHERE `job`.`id` IN(SELECT `job_id` FROM `job-applied` WHERE `login_id`='" + str(session['lid']) + "')")
     res = cmd.fetchall()
-    appliedjobs = []
-
-    for result in res:
-        contents  = {'job':result[0],'company':result[1]}
-        appliedjobs.append(contents)
-
-    return jsonify(appliedjobs)
+    return render_template('Jobseeker/appliedjobs.html',val=res)
 
 
-@app.route('/sendComplaint', methods=['post', 'get'])
-def sendComplaint():
-    uid = request.form["uid"]
-    cmpmsg = request.form["msg"]
 
-    today = date.today()
 
-    cmd.execute("INSERT INTO `complaint`(`complaint`,`date`,`login_id`)VALUES('"+cmpmsg+"','"+str(today)+"','"+str(uid)+"')")
-    con.commit()
-    return "success"
 
-@app.route('/sendFeedback', methods=['post', 'get'])
-def sendFeedback():
-    uid = request.form["uid"]
-    cmpmsg = request.form["msg"]
 
-    today = date.today()
 
-    cmd.execute("INSERT INTO `feedback`(`feedback`,`date`,`login_id`)VALUES('"+cmpmsg+"','"+str(today)+"','"+str(uid)+"')")
-    con.commit()
-    return "success"
+
+
+
+#----------------------------------Android webservice------------------------------------------------------------------------
+#
+# @app.route('/log_in', methods=['post', 'get'])
+# def log_in():
+#     username = request.form["username"]
+#     password = request.form["password"]
+#
+#
+#     cmd.execute("SELECT `login`.*,`jobseeker`.`firstname`,`jobseeker`.`lastname` FROM  `login` JOIN `jobseeker` ON `login`.`id`=`jobseeker`.`login_id` WHERE `username`='"+username+"' AND `password`='"+password+"'")
+#     res = cmd.fetchone()
+#     if res == None:
+#         result = {'status':'failure'}
+#         return jsonify(result)
+#     else:
+#         if res[3] == 'jobseeker':
+#             result = {'status': 'success','username':res[2],'uid':res[0],'fullname':res[4]+'  '+res[5]}
+#             return jsonify(result)
+#         else:
+#             result = {'status': 'failure'}
+#             return jsonify(result)
+#
+# @app.route('/register', methods=['post', 'get'])
+# def register():
+#     firstname = request.get_json()["firstname"]
+#     lastname = request.get_json()["lastname"]
+#     username = request.get_json()["username"]
+#     password = request.get_json()["password"]
+#     email = request.get_json()["email"]
+#     place = request.get_json()["place"]
+#     post = request.get_json()["post"]
+#     pin = request.get_json()["pin"]
+#     phone = request.get_json()["phone"]
+#     select_qry = "SELECT * from login where username = '"+username+"'"
+#     cmd.execute(select_qry)
+#
+#     records = cmd.fetchall()
+#     if len(records) != 0:
+#         return "username"
+#
+#     try:
+#         cmd.execute("INSERT INTO login(username,password,type) values ('"+username+"','"+password+"','jobseeker');")
+#         id = con.insert_id()
+#         insert_qry2 = "INSERT INTO jobseeker (firstname, lastname, place, post,pin,email,phoneno,login_id) VALUES ('" + firstname + "','" + lastname + "','" + place + "','" + post + "','" + str(pin) + "','" + email + "','" + str(phone) + "','"+str(id)+"')"
+#         cmd.execute(insert_qry2)
+#         con.commit()
+#         return "success"
+#     except Exception as e:
+#         return "failure"
+#
+#
+# @app.route('/viewjob', methods=['post', 'get'])
+# def viewjob():
+#     cmd.execute("SELECT `job`.*,`employer`.`company` FROM `job` JOIN `employer` ON `job`.`company_id`=`employer`.`id`")
+#     res = cmd.fetchall()
+#     jobs = []
+#
+#     for result in res:
+#         contents  ={'id':result[0],'job':result[1],'salary':result[3],'place':result[4],'contact':result[5],'company':result[6]}
+#         jobs.append(contents)
+#     return jsonify(jobs)
+#
+# @app.route('/jobApply', methods=['post', 'get'])
+# def jobApply():
+#     uid=request.form['user_id']
+#     job_id=request.form['job_id']
+#     try:
+#         cmd.execute("SELECT * FROM `job-applied` WHERE `login_id`='"+uid+"' AND `job_id` ='"+job_id+"'")
+#         res = cmd.fetchone()
+#         if res is None:
+#             cmd.execute("INSERT INTO `job-applied` (`login_id`,`job_id`) VALUES ('"+uid+"','"+job_id+"')")
+#             con.commit()
+#             return "success"
+#         else:
+#             return "failure"
+#     except Exception as e:
+#         return "failure"
+#
+#
+# @app.route('/viewAppliedjob', methods=['post', 'get'])
+# def viewAppliedjob():
+#     uid=request.form['login_id']
+#     cmd.execute("SELECT `job`.`job`,`employer`.`company` FROM `job` JOIN `employer` ON `job`.`company_id`=`employer`.`id` WHERE `job`.`id` IN(SELECT `job_id` FROM `job-applied` WHERE `login_id`='"+uid+"')")
+#     res = cmd.fetchall()
+#     appliedjobs = []
+#
+#     for result in res:
+#         contents  = {'job':result[0],'company':result[1]}
+#         appliedjobs.append(contents)
+#
+#     return jsonify(appliedjobs)
+#
+#
+# @app.route('/sendComplaint', methods=['post', 'get'])
+# def sendComplaint():
+#     uid = request.form["uid"]
+#     cmpmsg = request.form["msg"]
+#
+#     today = date.today()
+#
+#     cmd.execute("INSERT INTO `complaint`(`complaint`,`date`,`login_id`)VALUES('"+cmpmsg+"','"+str(today)+"','"+str(uid)+"')")
+#     con.commit()
+#     return "success"
+#
+# @app.route('/sendFeedback', methods=['post', 'get'])
+# def sendFeedback():
+#     uid = request.form["uid"]
+#     cmpmsg = request.form["msg"]
+#
+#     today = date.today()
+#
+#     cmd.execute("INSERT INTO `feedback`(`feedback`,`date`,`login_id`)VALUES('"+cmpmsg+"','"+str(today)+"','"+str(uid)+"')")
+#     con.commit()
+#     return "success"
 
 
 app.run(host="0.0.0.0" ,port=5000,threaded=True ,debug=True)

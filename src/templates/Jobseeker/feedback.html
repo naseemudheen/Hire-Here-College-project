@@ -1,0 +1,18 @@
+{% extends 'Jobseeker/jobseeker_home.html' %}
+{% block body %}
+<body>
+<form id="form1" name="form1" method="post" action="/sendfeedback_jobseeker">
+  <table width="200" border="0">
+    <tr>
+      <td>Feedback</td>
+      <td><input type="text" name="textfield" /></td>
+    </tr>
+    <tr>
+      <td colspan="2"><div align="center">
+        <input type="submit" name="Submit" value="Submit" />
+      </div></td>
+    </tr>
+  </table>
+</form>
+</body>
+{% endblock %}
